@@ -51,6 +51,7 @@ func (s *server) recoverPanic(next http.Handler) http.Handler {
 					w.Header().Set("Connection", "close")
 					w.WriteHeader(500)
 					s.logger.Error("server recover panic", "error", fmt.Sprintf("%s", err))
+					s.logger.Info("response", "code", 500)
 				}
 			}()
 			next.ServeHTTP(w, r)
