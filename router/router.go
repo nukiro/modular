@@ -33,7 +33,6 @@ func (r *router) Mux() http.Handler {
 		mux.HandlerFunc(route.method, route.path, route.handler)
 	}
 
-	// Set middlewares
 	return mux
 }
 

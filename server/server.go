@@ -23,31 +23,51 @@ type Configuration struct {
 
 type Server interface {
 	Run() error
-	Log(*slog.Logger)
+	Logger(*slog.Logger)
 	Handler(http.Handler)
 }
 
 type server struct {
 	*http.Server
 	*Configuration
-	*slog.Logger
+	logger *slog.Logger
 }
 
 func (s *server) address() string {
 	return fmt.Sprintf("%s:%s", s.Host, s.Port)
 }
 
-func (s *server) Log(l *slog.Logger) {
-	s.Logger = l
-	s.Server.ErrorLog = slog.NewLogLogger(l.Handler(), slog.LevelError)
+func (s *server) recoverPanic(next http.Handler) http.Handler {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			// Call builtin recover function to check
+			// it there has been a panic or not.
+			defer func() {
+				// If recover is called outside the deferred
+				// function it will not stop a panicking sequence.
+				if err := recover(); err != nil {
+					// Close the connection works as a trigger for the Go's
+					// HTTP server to automatically close the current connection.
+					w.Header().Set("Connection", "close")
+					w.WriteHeader(500)
+					s.logger.Error("server recover panic", "error", fmt.Sprintf("%s", err))
+				}
+			}()
+			next.ServeHTTP(w, r)
+		})
+}
+
+func (s *server) Logger(logger *slog.Logger) {
+	s.logger = logger
+	s.Server.ErrorLog = slog.NewLogLogger(s.logger.Handler(), slog.LevelError)
 }
 
 func (s *server) Handler(h http.Handler) {
-	s.Server.Handler = h
+	s.Server.Handler = s.recoverPanic(h)
 }
 
 func (s *server) Run() error {
-	if s.Logger == nil {
+	if s.logger == nil {
 		logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 		s.Server.ErrorLog = slog.NewLogLogger(logger.Handler(), slog.LevelError)
 	}
@@ -67,7 +87,7 @@ func (s *server) Run() error {
 		c := <-quit
 
 		// Clean up when a signal has been caught.
-		s.Logger.Info("shutting down server", "signal", c.String())
+		s.logger.Info("shutting down server", "signal", c.String())
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
@@ -75,6 +95,7 @@ func (s *server) Run() error {
 	}()
 
 	// Starting the server.
+	s.logger.Info("starting server", "addr", s.address())
 	err := s.Server.ListenAndServe()
 	// Calling Shutdown() on our server will cause ListenAndServe()
 	// to immediately return a server closed error.
@@ -90,7 +111,7 @@ func (s *server) Run() error {
 		return err
 	}
 
-	s.Logger.Info("stopped server", "addr", s.address())
+	s.logger.Info("server stopped", "addr", s.address())
 
 	return nil
 }
