@@ -51,6 +51,7 @@ func (s *server) Run() error {
 		logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 		s.Server.ErrorLog = slog.NewLogLogger(logger.Handler(), slog.LevelError)
 	}
+
 	if s.Server.Handler == nil {
 		return errors.New("server handler has not been set")
 	}
