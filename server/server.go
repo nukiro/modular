@@ -21,6 +21,15 @@ type Configuration struct {
 	WriteTimeout time.Duration
 }
 
+var configuration *Configuration = &Configuration{
+	false,
+	"localhost",
+	"8080",
+	time.Minute,
+	5 * time.Second,
+	10 * time.Second,
+}
+
 type Server interface {
 	Run() error
 	Logger(*slog.Logger)
@@ -117,24 +126,21 @@ func (s *server) Run() error {
 	return nil
 }
 
+func build(c *Configuration) *server {
+	srv := &server{Configuration: c}
+	srv.Server = &http.Server{
+		Addr:         srv.address(),
+		IdleTimeout:  c.IdleTimeout,
+		ReadTimeout:  c.ReadTimeout,
+		WriteTimeout: c.WriteTimeout,
+	}
+	return srv
+}
+
 func New(c *Configuration) Server {
 	config := c
 	if c == nil {
-		config = &Configuration{
-			false,
-			"localhost",
-			"8080",
-			time.Minute,
-			5 * time.Second,
-			10 * time.Second,
-		}
+		config = configuration
 	}
-	srv := &server{Configuration: config}
-	srv.Server = &http.Server{
-		Addr:         srv.address(),
-		IdleTimeout:  config.IdleTimeout,
-		ReadTimeout:  config.ReadTimeout,
-		WriteTimeout: config.WriteTimeout,
-	}
-	return srv
+	return build(config)
 }
