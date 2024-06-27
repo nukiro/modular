@@ -7,8 +7,6 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-type Configuration struct{}
-
 type Router interface {
 	Mux() http.Handler
 	Get(string, http.HandlerFunc)
@@ -21,7 +19,6 @@ type route struct {
 }
 
 type router struct {
-	*Configuration
 	routes []*route
 }
 
@@ -47,9 +44,8 @@ func (r *router) fullPath(path string) string {
 	return fmt.Sprintf("/%s", path)
 }
 
-func New(c *Configuration) Router {
+func New() Router {
 	return &router{
-		Configuration: nil,
-		routes:        make([]*route, 0),
+		routes: make([]*route, 0),
 	}
 }
