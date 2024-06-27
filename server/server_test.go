@@ -1,11 +1,14 @@
 package server
 
 import (
+	"log/slog"
+	"net/http"
+	"os"
 	"testing"
 	"time"
 )
 
-func TestServerAddress(t *testing.T) {
+func TestAddress(t *testing.T) {
 	// From a server default configuration
 	config := configuration
 	// Set server host and port
@@ -24,7 +27,7 @@ func TestServerAddress(t *testing.T) {
 	}
 }
 
-func TestBuildServer(t *testing.T) {
+func TestBuild(t *testing.T) {
 	// Create a server configuration
 	config := &Configuration{
 		Host:         "127.0.0.1",
@@ -58,4 +61,71 @@ func TestBuildServer(t *testing.T) {
 			srv.Server.WriteTimeout, config.WriteTimeout,
 		)
 	}
+}
+
+func TestLogger(t *testing.T) {
+	t.Run("new logger", func(t *testing.T) {
+		// Generate a new logger
+		logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+		// Build a server and set the logger
+		srv := build(configuration)
+		srv.Logger(logger)
+
+		if srv.logger == nil {
+			t.Errorf("logger was not set")
+		}
+		if srv.Server.ErrorLog == nil {
+			t.Errorf("server error log was not set")
+		}
+	})
+
+	t.Run("nil pointer logger", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("logger did not panic")
+			}
+		}()
+
+		// Build a server and set the logger
+		srv := build(configuration)
+		srv.Logger(nil)
+	})
+}
+
+func TestHandler(t *testing.T) {
+	t.Run("new http handler", func(t *testing.T) {
+		// Generate a new mux
+		mux := http.DefaultServeMux
+
+		// Build a server and set the handler
+		srv := build(configuration)
+		srv.Handler(mux)
+
+		if srv.Server.Handler == nil {
+			t.Errorf("server handler was not set")
+		}
+	})
+
+	t.Run("nil pointer handler", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("handler did not panic")
+			}
+		}()
+
+		srv := build(configuration)
+		srv.Handler(nil)
+	})
+}
+
+func TestRun(t *testing.T) {
+	t.Run("nil server handler", func(t *testing.T) {
+		srv := build(configuration)
+		err := srv.Run()
+
+		if err == nil {
+			t.Errorf("run did not return an error")
+		}
+	})
 }

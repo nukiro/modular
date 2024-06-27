@@ -68,18 +68,23 @@ func (s *server) recoverPanic(next http.Handler) http.Handler {
 }
 
 func (s *server) Logger(logger *slog.Logger) {
+	if logger == nil {
+		panic("server logger cannot be nil")
+	}
 	s.logger = logger
 	s.Server.ErrorLog = slog.NewLogLogger(s.logger.Handler(), slog.LevelError)
 }
 
-func (s *server) Handler(h http.Handler) {
-	s.Server.Handler = s.recoverPanic(h)
+func (s *server) Handler(handler http.Handler) {
+	if handler == nil {
+		panic("server handler cannot be nil")
+	}
+	s.Server.Handler = s.recoverPanic(handler)
 }
 
 func (s *server) Run() error {
 	if s.logger == nil {
-		logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-		s.Server.ErrorLog = slog.NewLogLogger(logger.Handler(), slog.LevelError)
+		s.Logger(slog.New(slog.NewTextHandler(os.Stdout, nil)))
 	}
 
 	if s.Server.Handler == nil {
