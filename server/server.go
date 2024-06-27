@@ -8,11 +8,21 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
 
+const (
+	Development Environment = iota
+	Staging
+	Production
+)
+
+type Environment int
+
 type Configuration struct {
+	Environment
 	TLS          bool
 	Host         string
 	Port         string
@@ -22,6 +32,7 @@ type Configuration struct {
 }
 
 var configuration *Configuration = &Configuration{
+	Development,
 	false,
 	"localhost",
 	"8080",
@@ -100,6 +111,12 @@ func (s *server) Run() error {
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		c := <-quit
+
+		// Print a couple of empty lines on the terminal
+		// after user stop the server (ctrl+c)
+		if s.Environment == Development {
+			print(strings.Repeat("\n", 2))
+		}
 
 		// Clean up when a signal has been caught.
 		s.logger.Info("shutting down server", "signal", c.String())
