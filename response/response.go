@@ -12,18 +12,18 @@ type Response interface {
 	Write(w http.ResponseWriter) int
 }
 
-type Payload map[string]any
+type payload map[string]any
 type response struct {
 	headers http.Header
 	code    int
-	Payload
+	payload
 }
 
 func new(code int, result, key string, data any) *response {
 	return &response{
 		headers: nil,
 		code:    code,
-		Payload: Payload{
+		payload: payload{
 			"time":   time.Now().Unix(),
 			"status": strings.ToLower(http.StatusText(code)),
 			"result": result,
@@ -60,7 +60,7 @@ func (r *response) Write(w http.ResponseWriter) int {
 func (r *response) write(w http.ResponseWriter) error {
 	// MarshalIndent adds whitespaces to the encoded JSON.
 	// No line prefix ("") and two white spaces indents ("\t") for each element.
-	js, err := json.MarshalIndent(r.Payload, "", "  ")
+	js, err := json.MarshalIndent(r.payload, "", "  ")
 	if err != nil {
 		return err
 	}
