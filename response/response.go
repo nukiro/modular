@@ -2,6 +2,7 @@ package response
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -19,7 +20,23 @@ type response struct {
 	payload
 }
 
-func new(code int, result, key string, data any) *response {
+type result string
+
+var (
+	success result = "success"
+	fail    result = "fail"
+	err     result = "error"
+)
+
+func new(code int, result result, key string, data any) *response {
+	if http.StatusText(code) == "" {
+		panic(fmt.Sprintf("response code %d is unknown", code))
+	}
+
+	if key == "" {
+		panic("response key cannot be empty")
+	}
+
 	return &response{
 		headers: nil,
 		code:    code,

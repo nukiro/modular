@@ -6,66 +6,87 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	resp := new(200, "success", "message", "this is the message")
+	t.Run("new response", func(t *testing.T) {
+		r := new(200, success, "message", "this is the message")
 
-	if resp.code != 200 {
-		t.Errorf("got code %d, but want %d", resp.code, 200)
-	}
-
-	if s, ok := resp.payload["time"]; ok {
-		x, ok := s.(int64)
-		if !ok {
-			t.Errorf("payload time is not in the correct format")
+		if r.headers != nil {
+			t.Errorf("headers was not empty")
 		}
 
-		y := time.Unix(int64(x), 0)
-		z := time.Now()
-
-		if y.After(z) {
-			t.Errorf("payload time is for the future")
-		}
-	} else {
-		t.Errorf("payload does not contain time key")
-	}
-
-	if s, ok := resp.payload["status"]; ok {
-		x, ok := s.(string)
-		if !ok {
-			t.Errorf("payload status is not in the correct format")
+		if r.code != 200 {
+			t.Errorf("got code %d, but want %d", r.code, 200)
 		}
 
-		if x != "ok" {
-			t.Errorf("got payload status %q, but want %q", x, "ok")
-		}
-	} else {
-		t.Errorf("payload does not contain status key")
-	}
+		if s, ok := r.payload["time"]; ok {
+			x := assertPayloadKeyFormat[int64](t, "time", s)
 
-	if s, ok := resp.payload["result"]; ok {
-		x, ok := s.(string)
-		if !ok {
-			t.Errorf("payload result is not in the correct format")
-		}
+			y := time.Unix(int64(x), 0)
+			z := time.Now()
 
-		if x != "success" {
-			t.Errorf("got payload result %q, but want %q", x, "success")
-		}
-	} else {
-		t.Errorf("payload does not contain result key")
-	}
-
-	if s, ok := resp.payload["message"]; ok {
-		x, ok := s.(string)
-		if !ok {
-			t.Errorf("payload data key is not in the correct format")
+			if y.After(z) {
+				t.Errorf("payload time is for the future")
+			}
+		} else {
+			t.Errorf("payload does not contain time key")
 		}
 
-		if x != "this is the message" {
-			t.Errorf("got payload data %q, but want %q", x, "this is the message")
+		if s, ok := r.payload["status"]; ok {
+			x := assertPayloadKeyFormat[string](t, "status", s)
+
+			if x != "ok" {
+				t.Errorf("got payload status %q, but want %q", x, "ok")
+			}
+		} else {
+			t.Errorf("payload does not contain status key")
 		}
-	} else {
-		t.Errorf("payload does not contain data key")
-	}
+
+		if s, ok := r.payload["result"]; ok {
+			x := assertPayloadKeyFormat[result](t, "result", s)
+
+			if x != "success" {
+				t.Errorf("got payload result %q, but want %q", x, "success")
+			}
+		} else {
+			t.Errorf("payload does not contain result key")
+		}
+
+		if s, ok := r.payload["message"]; ok {
+			x := assertPayloadKeyFormat[string](t, "data", s)
+
+			if x != "this is the message" {
+				t.Errorf("got payload data %q, but want %q", x, "this is the message")
+			}
+		} else {
+			t.Errorf("payload does not contain data key")
+		}
+	})
+
+	t.Run("new response with an empty key", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("new did not panic")
+			}
+		}()
+
+		new(200, "success", "", "this is the message")
+	})
+
+	t.Run("status code is not defined", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("new did not panic")
+			}
+		}()
+
+		new(0, "success", "message", "this is the message")
+	})
 }
 
-// func assertPayloadKeyFormat(t testing.TB) {}
+func assertPayloadKeyFormat[T string | int64 | result](t testing.TB, name string, value any) T {
+	t.Helper()
+	x, ok := value.(T)
+	if !ok {
+		t.Errorf("payload %s key is not in the correct format", name)
+	}
+	return x
+}

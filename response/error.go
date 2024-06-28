@@ -3,7 +3,7 @@ package response
 import "net/http"
 
 func Error(code int, msg string) Response {
-	return new(code, "error", "error", msg)
+	return new(code, err, "error", msg)
 }
 
 func InternalServerError() Response {

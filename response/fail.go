@@ -7,7 +7,7 @@ import (
 
 // 4xx responses
 func Fail(code int, errors any) Response {
-	return new(code, "fail", "error", errors)
+	return new(code, fail, "error", errors)
 }
 
 func BadRequest(errors any) Response {
