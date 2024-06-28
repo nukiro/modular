@@ -1,6 +1,8 @@
 package response
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func Success(code int, key string, data any) Response {
 	return new(code, success, key, data)

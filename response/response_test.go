@@ -2,6 +2,7 @@ package response
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -132,6 +133,18 @@ func TestWrite(t *testing.T) {
 
 		assertHeader(t, rw, "Content-Type", "application/json")
 		assertHeader(t, rw, "Test Key", "Test Value")
+	})
+
+	t.Run("error writing the response", func(t *testing.T) {
+		r := new(200, "success", "message", "this is the message")
+		w := httptest.NewRecorder()
+		f := serializer(func(v any, prefix, indent string) ([]byte, error) {
+			return nil, errors.New("an error occurred")
+		})
+
+		if err := write(r, w, f); err == nil {
+			t.Errorf("write did not return an error")
+		}
 	})
 }
 
