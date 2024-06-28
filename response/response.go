@@ -99,3 +99,40 @@ func (r *response) write(w http.ResponseWriter) error {
 	w.Write(js)
 	return nil
 }
+
+type serializer func(v any, prefix, indent string) ([]byte, error)
+
+func serialize(r *response, f serializer) ([]byte, error) {
+	// MarshalIndent adds whitespaces to the encoded JSON.
+	// No line prefix ("") and two white spaces indents ("\t") for each element.
+	js, err := f(r.payload, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+
+	// Append a new line making it easier to view in terminal applications.
+	js = append(js, '\n')
+	return js, nil
+}
+
+// Write sends a JSON response to the client.
+func write(r *response, w http.ResponseWriter, f serializer) error {
+	js, err := serialize(r, f)
+	if err != nil {
+		return err
+	}
+
+	// At this point it is safe to add any headers as we know that we will not
+	// encounter any more errors before writing the response.
+	// Custom headers value pass by param method.
+	for key, value := range r.headers {
+		w.Header()[key] = value
+	}
+	// Response Content Type
+	w.Header().Set("Content-Type", "application/json")
+	// Response Status Code
+	w.WriteHeader(r.code)
+
+	w.Write(js)
+	return nil
+}

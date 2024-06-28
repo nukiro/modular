@@ -1,6 +1,10 @@
 package response
 
 import (
+	"bytes"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 )
@@ -80,6 +84,66 @@ func TestNew(t *testing.T) {
 
 		new(0, "success", "message", "this is the message")
 	})
+}
+
+func TestWriteError(t *testing.T) {
+	rr := httptest.NewRecorder()
+
+	r := new(200, "success", "message", "this is the message")
+	r.writeError(rr)
+
+	rs := rr.Result()
+
+	if rs.StatusCode != 500 {
+		t.Errorf("status")
+	}
+
+}
+
+func TestWrite(t *testing.T) {
+	t.Run("good response", func(t *testing.T) {
+		r := new(200, "success", "message", "this is the message")
+		r.Header("Test Key", "Test Value")
+		w := httptest.NewRecorder()
+		f := serializer(func(v any, prefix, indent string) ([]byte, error) {
+			return []byte("Good response"), nil
+		})
+
+		if err := write(r, w, f); err != nil {
+			t.Errorf("write return error: %q", err.Error())
+		}
+
+		rw := w.Result()
+
+		if rw.StatusCode != 200 {
+			t.Errorf("got status code %d, but want %d", rw.StatusCode, 200)
+		}
+
+		defer rw.Body.Close()
+		body, err := io.ReadAll(rw.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body = bytes.TrimSpace(body)
+
+		if string(body) != "Good response" {
+			t.Errorf("got body %q, but want %q", string(body), "Good response")
+		}
+
+		assertHeader(t, rw, "Content-Type", "application/json")
+		assertHeader(t, rw, "Test Key", "Test Value")
+	})
+}
+
+func assertHeader(t testing.TB, rw *http.Response, key, value string) {
+	t.Helper()
+	if v := rw.Header.Get(key); v != "" {
+		if v != value {
+			t.Errorf("got %q header %q, but want %q", key, v, value)
+		}
+	} else {
+		t.Errorf("response does not contain %q header key", key)
+	}
 }
 
 func assertPayloadKeyFormat[T string | int64 | result](t testing.TB, name string, value any) T {
