@@ -169,6 +169,42 @@ func TestResponseWrite(t *testing.T) {
 	})
 }
 
+func TestResponseStatus(t *testing.T) {
+	tests := []struct {
+		code   int
+		status string
+	}{
+		{200, "200 OK"},
+		{201, "201 Created"},
+		{404, "404 Not Found"},
+		{500, "500 Internal Server Error"},
+	}
+
+	for _, tt := range tests {
+		n := fmt.Sprintf("Status Code %d", tt.code)
+		t.Run(n, func(t *testing.T) {
+			rw := new(tt.code, success, "test", "test")
+			if rw.Status() != tt.status {
+				t.Errorf("got %s, but want %s", rw.Status(), tt.status)
+			}
+		})
+	}
+}
+
+func TestResponseBody(t *testing.T) {
+	rw := new(200, success, "test", "test")
+	if rw.Body() == nil {
+		t.Errorf("body response does not exist")
+	}
+}
+
+func TestResponseHeader(t *testing.T) {
+	rw := new(200, success, "test", "test")
+	if rw.Header() == nil {
+		t.Errorf("body header does not exist")
+	}
+}
+
 func assertHeader(t testing.TB, rw *http.Response, key, value string) {
 	t.Helper()
 	if v := rw.Header.Get(key); v != "" {
