@@ -1,8 +1,10 @@
 package response
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -124,6 +126,46 @@ func TestNew(t *testing.T) {
 		}()
 
 		new(0, "success", "message", "this is the message")
+	})
+}
+
+func TestResponseWrite(t *testing.T) {
+	t.Run("without errors", func(t *testing.T) {
+		// Save and restore original write function
+		saved := write
+		defer func() { write = saved }()
+		// Fake write function
+		write = func(w http.ResponseWriter, f serializer, r *response) error {
+			return nil
+		}
+
+		w := httptest.NewRecorder()
+		r := new(200, success, "message", "this is a message")
+
+		rw := r.Write(w)
+
+		if rw.Status() != "200 OK" {
+			t.Errorf("got response status code %q, want %q", rw.Status(), "200 OK")
+		}
+	})
+
+	t.Run("with errors", func(t *testing.T) {
+		// Save and restore original write function
+		saved := write
+		defer func() { write = saved }()
+		// Fake write function
+		write = func(w http.ResponseWriter, f serializer, r *response) error {
+			return errors.New("an error")
+		}
+
+		w := httptest.NewRecorder()
+		r := new(200, success, "message", "this is a message")
+
+		rw := r.Write(w)
+
+		if rw.Status() != "500 Internal Server Error" {
+			t.Errorf("got response status code %q, want %q", rw.Status(), "500 Internal Server Error")
+		}
 	})
 }
 

@@ -60,11 +60,11 @@ func new(statusCode int, result result, key string, data any) *response {
 }
 
 func (rw *response) Status() string {
-	return ""
+	return fmt.Sprintf("%d %s", rw.statusCode, http.StatusText(rw.statusCode))
 }
 
 func (rw *response) Body() any {
-	return ""
+	return rw.body
 }
 
 func (rw *response) Header() http.Header {
@@ -74,8 +74,7 @@ func (rw *response) Header() http.Header {
 func (rw *response) Write(w http.ResponseWriter) Response {
 	f := json.MarshalIndent
 	if err := write(w, f, rw); err != nil {
-		writeError(w, f)
-		return rw
+		return writeError(w, f)
 	}
 	return rw
 }

@@ -4,7 +4,7 @@ import "net/http"
 
 type serializer func(v any, prefix, indent string) ([]byte, error)
 
-func serialize(f serializer, r *response) ([]byte, error) {
+var serialize = func(f serializer, r *response) ([]byte, error) {
 	if f == nil {
 		panic("serializer param cannot be nil")
 	}
@@ -24,7 +24,7 @@ func serialize(f serializer, r *response) ([]byte, error) {
 }
 
 // Write sends a JSON response to the client.
-func write(w http.ResponseWriter, f serializer, r *response) error {
+var write = func(w http.ResponseWriter, f serializer, r *response) error {
 	if w == nil {
 		panic("response writer param cannot be nil")
 	}
@@ -52,7 +52,7 @@ func write(w http.ResponseWriter, f serializer, r *response) error {
 	return nil
 }
 
-func writeError(w http.ResponseWriter, f serializer) Response {
+var writeError = func(w http.ResponseWriter, f serializer) Response {
 	rw := new(http.StatusInternalServerError, err, "error", internalServerErrorMsg)
 	if err := write(w, f, rw); err != nil {
 		w.WriteHeader(500)
