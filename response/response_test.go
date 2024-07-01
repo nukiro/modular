@@ -224,3 +224,10 @@ func assertPayloadKeyFormat[T string | int64 | result](t testing.TB, name string
 	}
 	return x
 }
+
+func assertResponseStatusCode(t testing.TB, rw Response, status string) {
+	t.Helper()
+	if rw.Status() != status {
+		t.Errorf("got response status code %q, but want %q", rw.Status(), status)
+	}
+}

@@ -6,6 +6,7 @@ import (
 )
 
 func AssertPanic(t testing.TB, r any, method, msg string) {
+	t.Helper()
 	if r == nil {
 		t.Errorf("%s did not panic", method)
 	}
