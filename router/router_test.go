@@ -2,10 +2,34 @@ package router
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/nukiro/modular/internal/tests"
 )
+
+func TestMux(t *testing.T) {
+	rt := router{
+		routes: []*route{
+			{http.MethodGet, "/", func(w http.ResponseWriter, r *http.Request) {}},
+		},
+	}
+
+	mux := rt.Mux()
+
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	rs, err := srv.Client().Get(srv.URL + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if rs.StatusCode != 200 {
+		t.Errorf("got status %d, but want %d", rs.StatusCode, 200)
+	}
+
+}
 
 func TestFullPath(t *testing.T) {
 	tests := []struct {
@@ -151,6 +175,6 @@ func assertRoutes(t testing.TB, routes []*route, method, path string) {
 	}
 
 	if got.handler == nil {
-		t.Errorf("handler cannot be nil")
+		t.Errorf("handler param cannot be nil")
 	}
 }
