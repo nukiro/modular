@@ -14,7 +14,7 @@ import (
 
 func TestSerialize(t *testing.T) {
 	t.Run("with no error", func(t *testing.T) {
-		f := serializer(func(v any, prefix, indent string) ([]byte, error) {
+		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return []byte("Hello World"), nil
 		})
 		r := new(200, success, "message", "this is a message")
@@ -34,7 +34,7 @@ func TestSerialize(t *testing.T) {
 	// provided to serialize will panic when f tries to deallocate the body,
 	// runtime error: invalid memory address or nil pointer dereference
 	t.Run("with a nil response", func(t *testing.T) {
-		f := serializer(func(v any, prefix, indent string) ([]byte, error) {
+		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return nil, nil
 		})
 
@@ -55,7 +55,7 @@ func TestSerialize(t *testing.T) {
 	})
 
 	t.Run("when serializer returns an error", func(t *testing.T) {
-		f := serializer(func(v any, prefix, indent string) ([]byte, error) {
+		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return nil, errors.New("error")
 		})
 		r := new(200, "suscess", "message", "this is a message")
@@ -77,7 +77,7 @@ func TestWrite(t *testing.T) {
 		r := new(200, success, "message", "this is the message")
 		r.header.Set("Test Key", "Test Value")
 		w := httptest.NewRecorder()
-		f := serializer(func(v any, prefix, indent string) ([]byte, error) {
+		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return []byte("Good response"), nil
 		})
 
@@ -112,7 +112,7 @@ func TestWrite(t *testing.T) {
 	// runtime error: invalid memory address or nil pointer dereference
 	t.Run("with a nil response", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		f := serializer(func(v any, prefix, indent string) ([]byte, error) {
+		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return nil, nil
 		})
 
@@ -135,7 +135,7 @@ func TestWrite(t *testing.T) {
 	})
 
 	t.Run("with a nil response writer", func(t *testing.T) {
-		f := serializer(func(v any, prefix, indent string) ([]byte, error) {
+		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return nil, nil
 		})
 		r := new(200, success, "message", "this is the message")
@@ -149,7 +149,7 @@ func TestWrite(t *testing.T) {
 
 	t.Run("error serializing the response", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		f := serializer(func(v any, prefix, indent string) ([]byte, error) {
+		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return nil, errors.New("an error occurred")
 		})
 		r := new(200, "success", "message", "this is the message")
@@ -191,7 +191,7 @@ func TestWriteError(t *testing.T) {
 
 	t.Run("error serializing internal server error response", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		f := serializer(func(v any, prefix, indent string) ([]byte, error) {
+		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return nil, errors.New("an error occurred")
 		})
 
@@ -219,7 +219,7 @@ func TestWriteError(t *testing.T) {
 	})
 
 	t.Run("with a nil response writer", func(t *testing.T) {
-		f := serializer(func(v any, prefix, indent string) ([]byte, error) {
+		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return nil, nil
 		})
 

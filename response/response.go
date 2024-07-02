@@ -1,7 +1,6 @@
 package response
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,7 +11,7 @@ type Response interface {
 	Status() string
 	Body() any
 	Header() http.Header
-	Write(w http.ResponseWriter) Response
+	Write(w http.ResponseWriter, f Serializer) Response
 }
 
 type body map[string]any
@@ -71,8 +70,7 @@ func (rw *response) Header() http.Header {
 	return rw.header
 }
 
-func (rw *response) Write(w http.ResponseWriter) Response {
-	f := json.MarshalIndent
+func (rw *response) Write(w http.ResponseWriter, f Serializer) Response {
 	if err := write(w, f, rw); err != nil {
 		return writeError(w, f)
 	}

@@ -1,6 +1,7 @@
 package response
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -135,14 +136,14 @@ func TestResponseWrite(t *testing.T) {
 		saved := write
 		defer func() { write = saved }()
 		// Fake write function
-		write = func(w http.ResponseWriter, f serializer, r *response) error {
+		write = func(w http.ResponseWriter, f Serializer, r *response) error {
 			return nil
 		}
 
 		w := httptest.NewRecorder()
 		r := new(200, success, "message", "this is a message")
 
-		rw := r.Write(w)
+		rw := r.Write(w, json.MarshalIndent)
 
 		if rw.Status() != "200 OK" {
 			t.Errorf("got response status code %q, want %q", rw.Status(), "200 OK")
@@ -154,14 +155,14 @@ func TestResponseWrite(t *testing.T) {
 		saved := write
 		defer func() { write = saved }()
 		// Fake write function
-		write = func(w http.ResponseWriter, f serializer, r *response) error {
+		write = func(w http.ResponseWriter, f Serializer, r *response) error {
 			return errors.New("an error")
 		}
 
 		w := httptest.NewRecorder()
 		r := new(200, success, "message", "this is a message")
 
-		rw := r.Write(w)
+		rw := r.Write(w, json.MarshalIndent)
 
 		if rw.Status() != "500 Internal Server Error" {
 			t.Errorf("got response status code %q, want %q", rw.Status(), "500 Internal Server Error")
