@@ -13,7 +13,7 @@ func AssertPanic(t testing.TB, r any, method, msg string) {
 	if r != nil {
 		s := fmt.Sprint(r)
 		if s != msg {
-			t.Errorf("got %q panic, but want %q", s, msg)
+			t.Errorf("got %q panic error, but want %q", s, msg)
 		}
 	}
 }

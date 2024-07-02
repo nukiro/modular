@@ -3,6 +3,8 @@ package router
 import (
 	"net/http"
 	"testing"
+
+	"github.com/nukiro/modular/internal/tests"
 )
 
 func TestFullPath(t *testing.T) {
@@ -37,11 +39,9 @@ func TestGet(t *testing.T) {
 		assertRoutes(t, router.routes, "GET", "/articles")
 	})
 
-	t.Run("empty route handler", func(t *testing.T) {
+	t.Run("nil route handler", func(t *testing.T) {
 		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("%s did not panic", "router")
-			}
+			tests.AssertPanicNilParam(t, recover(), "Get", "handler")
 		}()
 
 		router := build()
@@ -60,11 +60,9 @@ func TestPost(t *testing.T) {
 		assertRoutes(t, router.routes, "POST", "/articles")
 	})
 
-	t.Run("empty route handler", func(t *testing.T) {
+	t.Run("nil route handler", func(t *testing.T) {
 		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("router post did not panic")
-			}
+			tests.AssertPanicNilParam(t, recover(), "Post", "handler")
 		}()
 
 		router := build()
@@ -83,11 +81,9 @@ func TestPut(t *testing.T) {
 		assertRoutes(t, router.routes, "PUT", "/articles")
 	})
 
-	t.Run("empty route handler", func(t *testing.T) {
+	t.Run("nil route handler", func(t *testing.T) {
 		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("router put did not panic")
-			}
+			tests.AssertPanicNilParam(t, recover(), "Put", "handler")
 		}()
 
 		router := build()
@@ -106,11 +102,9 @@ func TestPatch(t *testing.T) {
 		assertRoutes(t, router.routes, "PATCH", "/articles")
 	})
 
-	t.Run("empty route handler", func(t *testing.T) {
+	t.Run("nil route handler", func(t *testing.T) {
 		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("router patch did not panic")
-			}
+			tests.AssertPanicNilParam(t, recover(), "Patch", "handler")
 		}()
 
 		router := build()
@@ -129,11 +123,9 @@ func TestDelete(t *testing.T) {
 		assertRoutes(t, router.routes, "DELETE", "/articles")
 	})
 
-	t.Run("empty route handler", func(t *testing.T) {
+	t.Run("nil route handler", func(t *testing.T) {
 		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("router delete did not panic")
-			}
+			tests.AssertPanicNilParam(t, recover(), "Delete", "handler")
 		}()
 
 		router := build()

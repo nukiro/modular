@@ -43,7 +43,7 @@ func (r *router) Mux() http.Handler {
 
 func panicNilHandler(h http.HandlerFunc) {
 	if h == nil {
-		panic("handler cannot be nil")
+		panic("handler param cannot be nil")
 	}
 }
 
