@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	Development Environment = iota
-	Staging
-	Production
+	Development Environment = "development"
+	Staging     Environment = "staging"
+	Production  Environment = "production"
 )
 
-type Environment int
+type Environment string
 
 type Configuration struct {
 	Environment
@@ -128,7 +128,7 @@ func (s *server) Run() error {
 	}()
 
 	// Starting the server.
-	s.logger.Info("starting server", "addr", s.address())
+	s.logger.Info("starting server", "addr", s.address(), "env", s.config.Environment)
 	err := s.Server.ListenAndServe()
 	// Calling Shutdown() on our server will cause ListenAndServe()
 	// to immediately return a server closed error.
