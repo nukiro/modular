@@ -102,17 +102,6 @@ func TestHandler(t *testing.T) {
 	})
 }
 
-func TestRun(t *testing.T) {
-	t.Run("nil server handler", func(t *testing.T) {
-		srv := New()
-		err := srv.Run()
-
-		if err == nil {
-			t.Errorf("run did not return an error")
-		}
-	})
-}
-
 func assertServer(t testing.TB, srv *server, c *Configuration) {
 	t.Helper()
 

@@ -94,13 +94,30 @@ func (s *server) Handler(handler http.Handler) {
 	s.Server.Handler = s.recoverPanic(handler)
 }
 
+func (s *server) defaultMux() http.Handler {
+	mux := http.NewServeMux()
+
+	// It will route all incoming request,
+	// no matter the verb or the path
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Info("request", "method", r.Method, "path", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK\n"))
+		s.logger.Info("response", "code", http.StatusOK)
+	})
+
+	return mux
+}
+
 func (s *server) Run() error {
 	if s.logger == nil {
 		s.Logger(slog.New(slog.NewTextHandler(os.Stdout, nil)))
 	}
 
 	if s.Server.Handler == nil {
-		return errors.New("server handler has not been set")
+		s.logger.Info("default server handler has been configured")
+		s.Handler(s.defaultMux())
 	}
 
 	shutdownError := make(chan error)
