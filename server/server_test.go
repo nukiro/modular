@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -28,40 +29,25 @@ func TestAddress(t *testing.T) {
 	}
 }
 
-func TestBuild(t *testing.T) {
-	// Create a server configuration
-	config := &Configuration{
-		Host:         "127.0.0.1",
-		Port:         1234,
-		IdleTimeout:  10 * time.Minute,
-		ReadTimeout:  time.Minute,
-		WriteTimeout: 2 * time.Minute,
-	}
+func TestNew(t *testing.T) {
+	t.Run("with a configuration", func(t *testing.T) {
+		// Create a server configuration
+		config := &Configuration{
+			Host:         "127.0.0.1",
+			Port:         1234,
+			IdleTimeout:  10 * time.Minute,
+			ReadTimeout:  time.Minute,
+			WriteTimeout: 2 * time.Minute,
+		}
 
-	srv := new(config)
-	addr := "127.0.0.1:1234"
+		srv := new(config)
+		assertServer(t, srv, config)
+	})
 
-	if srv.Server.Addr != addr {
-		t.Errorf("Addr is %q, but want %q", srv.Server.Addr, addr)
-	}
-	if srv.Server.IdleTimeout != config.IdleTimeout {
-		t.Errorf(
-			"Idle Timeout is %q, but want %q",
-			srv.Server.IdleTimeout, config.IdleTimeout,
-		)
-	}
-	if srv.Server.ReadTimeout != config.ReadTimeout {
-		t.Errorf(
-			"Read Timeout is %q, but want %q",
-			srv.Server.ReadTimeout, config.ReadTimeout,
-		)
-	}
-	if srv.Server.WriteTimeout != config.WriteTimeout {
-		t.Errorf(
-			"Write Timeout is %q, but want %q",
-			srv.Server.WriteTimeout, config.WriteTimeout,
-		)
-	}
+	t.Run("with a default configuration", func(t *testing.T) {
+		srv := new(nil)
+		assertServer(t, srv, configuration)
+	})
 }
 
 func TestLogger(t *testing.T) {
@@ -125,4 +111,32 @@ func TestRun(t *testing.T) {
 			t.Errorf("run did not return an error")
 		}
 	})
+}
+
+func assertServer(t testing.TB, srv *server, c *Configuration) {
+	t.Helper()
+
+	addr := fmt.Sprintf("%s:%d", c.Host, c.Port)
+
+	if srv.Server.Addr != addr {
+		t.Errorf("Addr is %q, but want %q", srv.Server.Addr, addr)
+	}
+	if srv.Server.IdleTimeout != c.IdleTimeout {
+		t.Errorf(
+			"Idle Timeout is %q, but want %q",
+			srv.Server.IdleTimeout, c.IdleTimeout,
+		)
+	}
+	if srv.Server.ReadTimeout != c.ReadTimeout {
+		t.Errorf(
+			"Read Timeout is %q, but want %q",
+			srv.Server.ReadTimeout, c.ReadTimeout,
+		)
+	}
+	if srv.Server.WriteTimeout != c.WriteTimeout {
+		t.Errorf(
+			"Write Timeout is %q, but want %q",
+			srv.Server.WriteTimeout, c.WriteTimeout,
+		)
+	}
 }
