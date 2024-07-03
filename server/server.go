@@ -25,7 +25,7 @@ type Configuration struct {
 	Environment
 	TLS          bool
 	Host         string
-	Port         string
+	Port         int
 	IdleTimeout  time.Duration
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
@@ -36,7 +36,7 @@ var configuration *Configuration = &Configuration{
 	Development,
 	false,
 	"localhost",
-	"8080",
+	8080,
 	time.Minute,
 	5 * time.Second,
 	10 * time.Second,
@@ -55,7 +55,7 @@ type server struct {
 }
 
 func (s *server) address() string {
-	return fmt.Sprintf("%s:%s", s.config.Host, s.config.Port)
+	return fmt.Sprintf("%s:%d", s.config.Host, s.config.Port)
 }
 
 func (s *server) recoverPanic(next http.Handler) http.Handler {

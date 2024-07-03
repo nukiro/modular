@@ -15,7 +15,7 @@ func TestAddress(t *testing.T) {
 	config := *configuration
 	// Set server host and port
 	config.Host = "127.0.0.1"
-	config.Port = "4000"
+	config.Port = 4000
 
 	want := "127.0.0.1:4000"
 
@@ -32,7 +32,7 @@ func TestBuild(t *testing.T) {
 	// Create a server configuration
 	config := &Configuration{
 		Host:         "127.0.0.1",
-		Port:         "1234",
+		Port:         1234,
 		IdleTimeout:  10 * time.Minute,
 		ReadTimeout:  time.Minute,
 		WriteTimeout: 2 * time.Minute,
