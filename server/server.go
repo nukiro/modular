@@ -31,6 +31,7 @@ type Configuration struct {
 	WriteTimeout time.Duration
 }
 
+// Default server configuration
 var configuration *Configuration = &Configuration{
 	Development,
 	false,
@@ -49,12 +50,12 @@ type Server interface {
 
 type server struct {
 	*http.Server
-	*Configuration
+	config *Configuration
 	logger *slog.Logger
 }
 
 func (s *server) address() string {
-	return fmt.Sprintf("%s:%s", s.Host, s.Port)
+	return fmt.Sprintf("%s:%s", s.config.Host, s.config.Port)
 }
 
 func (s *server) recoverPanic(next http.Handler) http.Handler {
@@ -80,7 +81,7 @@ func (s *server) recoverPanic(next http.Handler) http.Handler {
 
 func (s *server) Logger(logger *slog.Logger) {
 	if logger == nil {
-		panic("server logger cannot be nil")
+		panic("logger param cannot be nil")
 	}
 	s.logger = logger
 	s.Server.ErrorLog = slog.NewLogLogger(s.logger.Handler(), slog.LevelError)
@@ -88,7 +89,7 @@ func (s *server) Logger(logger *slog.Logger) {
 
 func (s *server) Handler(handler http.Handler) {
 	if handler == nil {
-		panic("server handler cannot be nil")
+		panic("handler param cannot be nil")
 	}
 	s.Server.Handler = s.recoverPanic(handler)
 }
@@ -114,7 +115,7 @@ func (s *server) Run() error {
 
 		// Print a couple of empty lines on the terminal
 		// after user stop the server (ctrl+c)
-		if s.Environment == Development {
+		if s.config.Environment == Development {
 			print(strings.Repeat("\n", 2))
 		}
 
@@ -148,21 +149,30 @@ func (s *server) Run() error {
 	return nil
 }
 
-func build(c *Configuration) *server {
-	srv := &server{Configuration: c}
-	srv.Server = &http.Server{
-		Addr:         srv.address(),
-		IdleTimeout:  c.IdleTimeout,
-		ReadTimeout:  c.ReadTimeout,
-		WriteTimeout: c.WriteTimeout,
-	}
-	return srv
-}
-
-func New(c *Configuration) Server {
+func new(c *Configuration) *server {
 	config := c
 	if c == nil {
 		config = configuration
 	}
-	return build(config)
+	srv := &server{config: config}
+	srv.Server = &http.Server{
+		Addr:         srv.address(),
+		IdleTimeout:  config.IdleTimeout,
+		ReadTimeout:  config.ReadTimeout,
+		WriteTimeout: config.WriteTimeout,
+	}
+	return srv
+}
+
+func New() Server {
+	// Set default configuration when creating
+	return new(configuration)
+}
+
+func Build(config *Configuration) Server {
+	return new(config)
+}
+
+func Create() Configuration {
+	return *configuration
 }

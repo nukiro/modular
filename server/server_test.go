@@ -6,11 +6,13 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/nukiro/modular/internal/tests"
 )
 
 func TestAddress(t *testing.T) {
 	// From a server default configuration
-	config := configuration
+	config := *configuration
 	// Set server host and port
 	config.Host = "127.0.0.1"
 	config.Port = "4000"
@@ -18,11 +20,10 @@ func TestAddress(t *testing.T) {
 	want := "127.0.0.1:4000"
 
 	// Generate a new server
-	srv := server{Configuration: configuration}
+	srv := server{config: &config}
 
 	got := srv.address()
-
-	if srv.address() != want {
+	if got != want {
 		t.Errorf("got %q, but want %q", got, want)
 	}
 }
@@ -37,7 +38,7 @@ func TestBuild(t *testing.T) {
 		WriteTimeout: 2 * time.Minute,
 	}
 
-	srv := build(config)
+	srv := new(config)
 	addr := "127.0.0.1:1234"
 
 	if srv.Server.Addr != addr {
@@ -69,7 +70,7 @@ func TestLogger(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 		// Build a server and set the logger
-		srv := build(configuration)
+		srv := new(nil)
 		srv.Logger(logger)
 
 		if srv.logger == nil {
@@ -82,13 +83,11 @@ func TestLogger(t *testing.T) {
 
 	t.Run("nil pointer logger", func(t *testing.T) {
 		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("logger did not panic")
-			}
+			tests.AssertPanicNilParam(t, recover(), "Logger", "logger")
 		}()
 
 		// Build a server and set the logger
-		srv := build(configuration)
+		srv := New()
 		srv.Logger(nil)
 	})
 }
@@ -99,7 +98,7 @@ func TestHandler(t *testing.T) {
 		mux := http.DefaultServeMux
 
 		// Build a server and set the handler
-		srv := build(configuration)
+		srv := new(nil)
 		srv.Handler(mux)
 
 		if srv.Server.Handler == nil {
@@ -109,19 +108,17 @@ func TestHandler(t *testing.T) {
 
 	t.Run("nil pointer handler", func(t *testing.T) {
 		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("handler did not panic")
-			}
+			tests.AssertPanicNilParam(t, recover(), "Handler", "handler")
 		}()
 
-		srv := build(configuration)
+		srv := New()
 		srv.Handler(nil)
 	})
 }
 
 func TestRun(t *testing.T) {
 	t.Run("nil server handler", func(t *testing.T) {
-		srv := build(configuration)
+		srv := New()
 		err := srv.Run()
 
 		if err == nil {
