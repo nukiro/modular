@@ -2,11 +2,10 @@ package response
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/nukiro/modular/internal/tests"
@@ -17,9 +16,8 @@ func TestSerialize(t *testing.T) {
 		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return []byte("Hello World"), nil
 		})
-		r := new(200, success, "message", "this is a message")
 
-		js, err := serialize(f, r)
+		js, err := serialize(f, "body")
 
 		if err != nil {
 			t.Errorf("an error was returned, when it is not expected")
@@ -39,28 +37,26 @@ func TestSerialize(t *testing.T) {
 		})
 
 		defer func() {
-			tests.AssertPanicNilParam(t, recover(), "serialize", "response")
+			tests.AssertPanicNilParam(t, recover(), "serialize", "body")
 		}()
 
 		serialize(f, nil)
 	})
 
 	t.Run("with a nil serializer", func(t *testing.T) {
-		r := new(200, success, "message", "this is a message")
 		defer func() {
 			tests.AssertPanicNilParam(t, recover(), "serialize", "serializer")
 		}()
 
-		serialize(nil, r)
+		serialize(nil, "body")
 	})
 
 	t.Run("when serializer returns an error", func(t *testing.T) {
 		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return nil, errors.New("error")
 		})
-		r := new(200, "suscess", "message", "this is a message")
 
-		js, err := serialize(f, r)
+		js, err := serialize(f, "body")
 
 		if err == nil {
 			t.Errorf("serialize did not return an error")
@@ -74,11 +70,13 @@ func TestSerialize(t *testing.T) {
 
 func TestWrite(t *testing.T) {
 	t.Run("good response", func(t *testing.T) {
-		r := new(200, success, "message", "this is the message")
-		r.header.Set("Test Key", "Test Value")
+		r := New(200)
+		r.Body = "Good Response"
+		r.Header.Set("Test Key", "Test Value")
+
 		w := httptest.NewRecorder()
 		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
-			return []byte("Good response"), nil
+			return []byte("Good Response"), nil
 		})
 
 		if err := write(w, f, r); err != nil {
@@ -98,8 +96,8 @@ func TestWrite(t *testing.T) {
 		}
 		body = bytes.TrimSpace(body)
 
-		if string(body) != "Good response" {
-			t.Errorf("got body %q, but want %q", string(body), "Good response")
+		if string(body) != "Good Response" {
+			t.Errorf("got body %q, but want %q", string(body), "Good Response")
 		}
 
 		assertHeader(t, rw, "Content-Type", "application/json")
@@ -125,7 +123,7 @@ func TestWrite(t *testing.T) {
 
 	t.Run("with a nil serializer", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		r := new(200, success, "message", "this is the message")
+		r := New(200)
 
 		defer func() {
 			tests.AssertPanicNilParam(t, recover(), "write", "serializer")
@@ -138,7 +136,7 @@ func TestWrite(t *testing.T) {
 		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return nil, nil
 		})
-		r := new(200, success, "message", "this is the message")
+		r := New(200)
 
 		defer func() {
 			tests.AssertPanicNilParam(t, recover(), "write", "response writer")
@@ -148,11 +146,14 @@ func TestWrite(t *testing.T) {
 	})
 
 	t.Run("error serializing the response", func(t *testing.T) {
+		r := New(200)
+		r.Body = "Good Response"
+		r.Header.Set("Test Key", "Test Value")
+
 		w := httptest.NewRecorder()
 		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
 			return nil, errors.New("an error occurred")
 		})
-		r := new(200, "success", "message", "this is the message")
 
 		if err := write(w, f, r); err == nil {
 			t.Errorf("write did not return an error")
@@ -160,74 +161,13 @@ func TestWrite(t *testing.T) {
 	})
 }
 
-func TestWriteError(t *testing.T) {
-	t.Run("internal server error response", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		f := json.MarshalIndent
-
-		rs := writeError(w, f)
-
-		if rs == nil {
-			t.Errorf("writeError did not return a response")
+func assertHeader(t testing.TB, rw *http.Response, key, value string) {
+	t.Helper()
+	if v := rw.Header.Get(key); v != "" {
+		if v != value {
+			t.Errorf("got %q header %q, but want %q", key, v, value)
 		}
-
-		rw := w.Result()
-
-		if rw.StatusCode != 500 {
-			t.Errorf("got response status code %d, but want %d", rw.StatusCode, 500)
-		}
-
-		defer rw.Body.Close()
-		body, err := io.ReadAll(rw.Body)
-		if err != nil {
-			t.Fatal(err)
-		}
-		body = bytes.TrimSpace(body)
-
-		if !strings.Contains(string(body), internalServerErrorMsg) {
-			t.Errorf("response body:\n%s,\ndoes not contain %q", string(body), internalServerErrorMsg)
-		}
-	})
-
-	t.Run("error serializing internal server error response", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
-			return nil, errors.New("an error occurred")
-		})
-
-		rs := writeError(w, f)
-
-		if rs == nil {
-			t.Errorf("writeError did not return a response")
-		}
-
-		rw := w.Result()
-
-		if rw.StatusCode != 500 {
-			t.Errorf("got response status code %d, but want %d", rw.StatusCode, 500)
-		}
-	})
-
-	t.Run("with a nil serializer", func(t *testing.T) {
-		w := httptest.NewRecorder()
-
-		defer func() {
-			tests.AssertPanicNilParam(t, recover(), "write", "serializer")
-		}()
-
-		writeError(w, nil)
-	})
-
-	t.Run("with a nil response writer", func(t *testing.T) {
-		f := Serializer(func(v any, prefix, indent string) ([]byte, error) {
-			return nil, nil
-		})
-
-		defer func() {
-			tests.AssertPanicNilParam(t, recover(), "write", "response writer")
-		}()
-
-		writeError(nil, f)
-	})
-
+	} else {
+		t.Errorf("response does not contain %q header key", key)
+	}
 }
